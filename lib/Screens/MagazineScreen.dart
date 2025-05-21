@@ -39,7 +39,7 @@ class MagazineScreen extends StatelessWidget {
             color: Colors.white,
           ),
         ),
-        backgroundColor: const Color(0xFF1A237E), // Deep indigo for premium look
+        backgroundColor: const Color(0xFF1A237E), 
         elevation: 0,
         centerTitle: true,
       ),
@@ -50,7 +50,7 @@ class MagazineScreen extends StatelessWidget {
             crossAxisCount: 2,
             crossAxisSpacing: 16,
             mainAxisSpacing: 16,
-            childAspectRatio: 0.75, // Slightly taller for elegance
+            childAspectRatio: 0.75,
           ),
           itemCount: magazines.length,
           itemBuilder: (context, index) {
@@ -72,7 +72,7 @@ class MagazineScreen extends StatelessWidget {
           },
         ),
       ),
-      backgroundColor: Colors.grey[100], // Light background for contrast
+      backgroundColor: Colors.grey[100], 
     );
   }
 }
@@ -95,7 +95,7 @@ class MagazineListItem extends StatelessWidget {
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
         curve: Curves.easeInOut,
-        transform: Matrix4.identity()..scale(1.0), // Subtle scale animation
+        transform: Matrix4.identity()..scale(1.0), 
         child: Card(
           elevation: 8,
           shadowColor: Colors.black.withOpacity(0.3),
@@ -105,7 +105,7 @@ class MagazineListItem extends StatelessWidget {
           child: Container(
             decoration: BoxDecoration(
               gradient: const LinearGradient(
-                colors: [Color(0xFF1A237E), Color(0xFF3F51B5)], // Indigo gradient
+                colors: [Color(0xFF1A237E), Color(0xFF3F51B5)], 
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
               ),
