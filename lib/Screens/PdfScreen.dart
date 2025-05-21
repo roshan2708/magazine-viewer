@@ -27,9 +27,10 @@ class _PDFViewerScreenState extends State<PDFViewerScreen> {
 
   Future<void> _downloadAndSavePDF() async {
     try {
-      // Download the file with headers to request a PDF
+      // Download the file with headers
       final response = await http.get(Uri.parse(widget.url), headers: {
         'Accept': 'application/pdf',
+        'User-Agent': 'Mozilla/5.0', // Helps with Google Drive compatibility
       });
 
       // Log response details for debugging
@@ -38,32 +39,41 @@ class _PDFViewerScreenState extends State<PDFViewerScreen> {
       print('Content-Type: ${response.headers['content-type']}');
       print('Content-Length: ${response.bodyBytes.length}');
 
-      // Check if the response is a PDF
-      if (response.statusCode == 200 && response.headers['content-type']?.contains('application/pdf') == true) {
+      // Check if response is valid
+      if (response.statusCode == 200) {
         final bytes = response.bodyBytes;
-        final dir = await getTemporaryDirectory();
-        final file = File('${dir.path}/${widget.title.replaceAll(' ', '_')}.pdf');
-        await file.writeAsBytes(bytes);
 
-        // Verify file exists and is not empty
-        if (await file.exists() && await file.length() > 0) {
-          setState(() {
-            localPath = file.path;
-            isLoading = false;
-          });
+        // Basic PDF validation: Check if file starts with %PDF
+        if (bytes.length > 4 && String.fromCharCodes(bytes.sublist(0, 4)) == '%PDF') {
+          final dir = await getTemporaryDirectory();
+          final file = File('${dir.path}/${widget.title.replaceAll(' ', '_')}.pdf');
+          await file.writeAsBytes(bytes);
+
+          // Verify file exists and is not empty
+          if (await file.exists() && await file.length() > 0) {
+            setState(() {
+              localPath = file.path;
+              isLoading = false;
+            });
+          } else {
+            setState(() {
+              isLoading = false;
+              errorMessage = 'Downloaded file is empty or invalid.';
+            });
+          }
         } else {
+          // Log the first 500 characters of the response body for debugging
+          String bodyPreview = response.body.length > 500 ? response.body.substring(0, 500) : response.body;
+          print('Response body preview: $bodyPreview');
           setState(() {
             isLoading = false;
-            errorMessage = 'Downloaded file is empty or invalid.';
+            errorMessage = 'Invalid response: Not a PDF file.';
           });
         }
       } else {
-        // Log the first 500 characters of the response body if not a PDF
-        String bodyPreview = response.body.length > 500 ? response.body.substring(0, 500) : response.body;
-        print('Response body preview: $bodyPreview');
         setState(() {
           isLoading = false;
-          errorMessage = 'Invalid response: Not a PDF file (Content-Type: ${response.headers['content-type']}).';
+          errorMessage = 'Failed to download PDF: HTTP ${response.statusCode}';
         });
       }
     } catch (e) {
@@ -83,9 +93,31 @@ class _PDFViewerScreenState extends State<PDFViewerScreen> {
         backgroundColor: Colors.blueAccent,
       ),
       body: isLoading
-          ? Center(child: CircularProgressIndicator())
+          ? const Center(child: CircularProgressIndicator())
           : errorMessage != null
-              ? Center(child: Text(errorMessage!, style: TextStyle(color: Colors.red, fontSize: 16)))
+              ? Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text(
+                        errorMessage!,
+                        style: const TextStyle(color: Colors.red, fontSize: 16),
+                        textAlign: TextAlign.center,
+                      ),
+                      const SizedBox(height: 16),
+                      ElevatedButton(
+                        onPressed: () {
+                          setState(() {
+                            isLoading = true;
+                            errorMessage = null;
+                          });
+                          _downloadAndSavePDF();
+                        },
+                        child: const Text('Retry'),
+                      ),
+                    ],
+                  ),
+                )
               : localPath != null
                   ? PDFView(
                       filePath: localPath!,
@@ -100,7 +132,7 @@ class _PDFViewerScreenState extends State<PDFViewerScreen> {
                         });
                       },
                     )
-                  : Center(child: Text('Failed to load PDF')),
+                  : const Center(child: Text('Failed to load PDF')),
     );
   }
 }
